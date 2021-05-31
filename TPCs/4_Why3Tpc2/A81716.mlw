@@ -1,0 +1,76 @@
+module SelectionSort
+
+  use int.Int
+  use ref.Ref
+  use array.Array
+  use array.IntArraySorted
+  use array.ArrayPermut
+  use array.ArrayEq
+  
+  (*Função de Swap*)
+  let swap (a: array int) (i: int) (j: int) =
+    requires { 0 <= i < length a /\ 0 <= j < length a }
+    ensures { exchange (old a) a i j }
+   let v = a[i] in
+    a[i] <- a[j];
+    a[j] <- v
+  (* Auto-Level 2 prova tudo *)  
+  let selection_sort_2 (a: array int) =
+    ensures { sorted a }
+    ensures { permut_all (old a) a }
+  for i = 0 to length a - 1 do
+      (* sorted_sub garante que o array até i encontra-se sempre ordenado,
+      permut_all foi necessário para provar uma das condições que não conseguia provar ' selection_sort_2'vc : permut_all a1 a '*)
+      invariant { sorted_sub a 0 i /\ permut_all (old a) a } 
+      invariant { forall i1 i2: int. 0 <= i1 < i <= i2 < length a -> a[i1] <= a[i2] }
+      let min = ref i in
+      for j = i + 1 to length a - 1 do
+        invariant { i <= !min < j }
+        invariant { forall t: int. i <= t < j -> a[!min] <= a[t] }
+        if a[j] < a[!min] then min := j
+      done;
+      if !min <> i then swap a !min i
+    done
+ 
+end
+
+module InsertionSort
+
+  use int.Int
+  use ref.Ref
+  use array.Array
+  use array.IntArraySorted
+  use array.ArrayPermut
+  use array.ArrayEq
+  
+  (*Função de Swap*)
+  let swap (a: array int) (i: int) (j: int) =
+    requires { 0 <= i < length a /\ 0 <= j < length a }
+    ensures { exchange (old a) a i j }
+   let v = a[i] in
+    a[i] <- a[j];
+    a[j] <- v
+ 
+  (* Auto-Level 2 prova tudo *)
+  let insertion_sort3 (a: array int) =
+    ensures { sorted a /\ permut_all (old a) a }
+  label L in
+    for i = 1 to length a - 1 do
+      invariant { (sorted_sub a 0 i) /\ permut_all (old a) a }
+      let j = ref i in
+      while !j > 0 && a[!j - 1] > a[!j] do
+        invariant { 0 <= !j <= i }
+        invariant { permut_all (old a) a } (*Não consegue provar sem que esteja aqui*)
+        invariant { sorted_sub a 0 !j }
+        invariant { sorted_sub a !j (i+1) }
+        (* Para todos os indices entre j e i, não pode haver um swap feito com um elemento que fosse
+        mais pequeno que o elemento que foi para trás *)
+        invariant { forall k1 k2:int. 0 <= k1 < !j /\ !j+1 <= k2 <= i -> a[k1] <= a[k2] }
+        variant { !j }
+        swap a (!j-1) !j;
+        j := !j - 1
+        
+      done
+  done
+  
+end

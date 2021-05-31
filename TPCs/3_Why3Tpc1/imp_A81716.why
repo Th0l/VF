@@ -1,0 +1,228 @@
+theory Exprs
+
+use map.Map
+use map.Const
+
+use int.Int 
+
+(* identifiers *)
+type ident
+
+function mk_ident int : ident
+
+(* expressions *)
+type operator = Oplus | Ominus | Omult
+
+type expr =
+  | Econst int
+  | Evar ident
+  | Ebin expr operator expr
+  | Emm expr (* Indicador de ++ *)
+
+(* program states *)
+
+type state = map ident int
+
+
+
+(* semantics of expressions *) 
+function operatorHelper (n1:int) (op:operator) (n2:int) : int =
+  match op with
+    | Oplus -> n1 + n2
+    | Ominus -> n1 - n2
+    | Omult -> n1 * n2
+  end
+  
+function eval_expr (s:state) (e:expr) : int =
+  match e with
+    | Econst x -> x
+    | Evar id -> get s id
+    | Ebin exp1 op exp2 -> operatorHelper (eval_expr s exp1) op (eval_expr s exp2)
+    | Emm exp -> operatorHelper (eval_expr s exp) Oplus 1 (* O operador ++ corresponde a acrescentar + 1*)
+  end	 
+  
+  (* Prova imediata *)
+  goal Test13 :
+    let s = const 0 in
+    eval_expr s (Econst 13) = 13
+
+  (* Prova imediata *)
+  goal Test42 :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr s (Evar x) = 42
+
+  (* Prova imediata *)
+  goal Test55 :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr s (Ebin (Evar x) Oplus (Econst 13)) = 55
+  
+  (* Feito para testar a definição do operador ++ . Prova imediata. *)  
+  goal TestPlusPlus :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr s (Emm (Evar x)) = 43
+
+(* semantics of expressions as an evaluation relation   *)
+(* this always terminates, and thus was written as a    *)
+(* function before, but we can write it as an inductive *)
+(* predicate and prove a correspondence between the two *)
+inductive eval_expr_rel state expr state int =
+    | econst : forall n:int, s:state.
+               eval_expr_rel s (Econst n) s n
+    | evar : forall idn:ident, s:state.
+             eval_expr_rel s (Evar idn) s (get s idn)
+    | ebin : forall n1,n2:int, e1,e2:expr, s1,s2,s3:state, o:operator.
+             (eval_expr_rel s1 e1 s2 n1) -> (eval_expr_rel s2 e2 s3 n2) -> (eval_expr_rel s1 (Ebin e1 o e2) s3 (operatorHelper n1 o n2))
+    | emm : forall n:int, s:state, e:expr.
+            (eval_expr_rel s e s n) -> eval_expr_rel s (Emm e) s (operatorHelper n Oplus 1)
+            (* A avaliação da expressão e ser valida implica que o ++ da expressão e, tbm é valido. *)
+              
+  (* Prova imediata *)
+  goal Test13r :
+    let s = const 0 in
+    eval_expr_rel s (Econst 13) s 13
+
+  (* Prova imediata *)
+  goal Test42r :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr_rel s (Evar x) s 42
+  
+  (* Como Provar:
+      1-> split_vc;
+      2-> aplicar "assert (eval_expr_rel s (Evar x) s 42)" a 0;
+      3-> 0 pode ser provado || aplicar "assert (eval_expr_rel s (Econst 13) s 13)" a 1;
+      4-> 0 e 1 já podem ser provados. *)  
+  goal Test55r :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr_rel s (Ebin (Evar x) Oplus (Econst 13)) s 55
+        
+(* S1 e S2 representam o estado antes e depois da avaliação da expressão
+logo é possivel provar que o estado não é alterado com a seguinte expressão.
+-----------------------------------------//-------------------------------------- 
+Para provar: Basta usar a transformação induction_pr e já consegue ser provado.*)
+lemma no_side_effects:
+      forall s1,s2:state, e:expr, n:int. (eval_expr_rel s1 e s2 n) -> s1 = s2
+
+(* Como Provar sem Induction_Pr:
+      1-> split_all_full;
+      2-> aplicar induction_ty_lex tanto a 0 e 1;
+      3-> ambos os 0 gerados já podem ser provados. 
+   Como Provar com Induction_Pr:
+      1-> 1-> split_all_full;
+      2-> aplicar induction_pr a 0;
+      3-> 0,1 e 2 já podem ser provados;
+      4-> aplicar induction_ty_lex a 1;
+      5-> o 0 gerado já pode ser provado. *)      
+lemma expr_eval:
+    forall e:expr, s:state, n:int. eval_expr_rel s e s n <-> (eval_expr s e = n) 
+    
+(* 
+Agora que no_side_effects e expr_eval foram provados
+já não se precisa de fazer transformações secundárias para resolver o 55r.
+*)
+goal Test55r2 :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr_rel s (Ebin (Evar x) Oplus (Econst 13)) s 55
+    
+(* Feito para testar a definição indutiva do operador ++ . Prova imediata. *)    
+goal TestPlusPlusR :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 42 in
+    eval_expr_rel s (Emm (Evar x)) s 43
+    
+end
+
+theory Programs
+
+use map.Map 
+use map.Const
+
+use Exprs
+
+
+
+(* statements *)
+type stmt =
+  | Sskip
+  | Sassign ident expr
+  | Sseq stmt stmt
+  | Sif expr stmt stmt
+  | Swhile expr stmt
+
+
+
+(* big step semantics *)
+  inductive big_step state stmt state =
+    (* skip *)
+    | big_Skip: forall m:state. big_step m (Sskip) m
+    
+    (* assignement *)                                                    (* Estado m, mas onde o x vai ser atribuido o valor a*)
+    | big_Ass: forall m:state, a:expr, x:ident. big_step m (Sassign x a) m[x <- eval_expr m a]
+    
+    (* sequence *)    
+    | big_seq: forall cmd1 cmd2:stmt, m0 m1 m2:state. 
+        big_step m0 cmd1 m1 -> big_step m1 cmd2 m2 -> big_step m0 (Sseq cmd1 cmd2) m2 
+    
+    (* if true *)
+    | big_if_True: forall m0 m1:state, cond:expr, cmd1 cmd2:stmt.
+        (eval_expr m0 cond) = 0 -> big_step m0 cmd1 m1 -> big_step m0 (Sif cond cmd1 cmd2) m1
+    
+    (* if false *)
+    | big_if_False: forall m0 m1:state, cond:expr, cmd1 cmd2:stmt.
+        not ((eval_expr m0 cond) = 0) -> big_step m0 cmd2 m1 -> big_step m0 (Sif cond cmd1 cmd2) m1
+    
+    (* while loop *)
+    | big_while_Loop: forall mi mj mf:state, cond:expr, body:stmt.
+        eval_expr_rel mi cond mf 0 -> big_step mi body mj -> big_step mj (Swhile cond body) mf -> big_step mi (Swhile cond body) mf
+    
+    (* while end *)
+    | big_while_End: forall cond:expr, m:state, st:stmt.
+      not eval_expr_rel m cond m 0 -> big_step m (Swhile cond st) m
+
+
+  (* Prova direta *)
+  goal Assign42 :
+    let x = mk_ident 0 in
+    let s = const 0 in
+    forall s':state.
+      big_step s (Sassign x (Econst 42)) s' -> get s' x = 42
+
+  (* Prova direta *)
+  goal If42 :
+    let x = mk_ident 0 in
+    let s = set (const 0) x 0 in
+    forall s1:state.
+      big_step s
+        (Sif (Evar x)
+             (Sassign x (Econst 13))
+             (Sassign x (Econst 42)))
+	 s1 ->
+	 get s1 x = 13
+   
+   (* Feito para provar que a Seq funcionava
+   Prova direta. *) 
+   goal Seq20 :
+    let x = mk_ident 10 in
+    let s = set (const 0) x 10 in
+    forall s1:state, i:stmt.
+      big_step s
+        (Sseq
+             (Sassign x (Econst 20))
+             (Sassign x (Econst  (get s x)  ))) 
+     s1 ->
+     get s1 x = 10 
+     
+   (* Para provar basta aplicar induction_pr e todos os goals gerados
+   podem ser provados de forma direta. *)
+   goal big_step_determinism:
+    forall s s':state, i :stmt.
+      big_step s i s'  ->  forall s'': state. big_step s i s''  -> s' = s''
+
+end
+
+

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="6">
+<prover id="0" name="Alt-Ergo" version="2.3.1" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="1" name="CVC4" version="1.6" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Z3" version="4.8.6" timelimit="1" steplimit="0" memlimit="1000"/>
+<file format="whyml" proved="true">
+<path name=".."/><path name="binaryTrees_A81716.mlw"/>
+<theory name="Bintree_insert" proved="true">
+ <goal name="leq_tree&#39;vc" expl="VC for leq_tree" proved="true">
+ <proof prover="0"><result status="timeout" time="1.00"/></proof>
+ <proof prover="1"><result status="unknown" time="0.13" steps="23121"/></proof>
+ <proof prover="2"><result status="timeout" time="1.00" steps="7182047"/></proof>
+ <transf name="split_vc" proved="true" >
+  <goal name="leq_tree&#39;vc.0" expl="postcondition" proved="true">
+  <proof prover="1"><result status="valid" time="0.03" steps="7281"/></proof>
+  </goal>
+  <goal name="leq_tree&#39;vc.1" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.26" steps="1336"/></proof>
+  <proof prover="1"><result status="unknown" time="0.06" steps="13631"/></proof>
+  </goal>
+  <goal name="leq_tree&#39;vc.2" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.03" steps="169"/></proof>
+  <proof prover="1"><result status="unknown" time="0.06" steps="13460"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="add&#39;vc" expl="VC for add" proved="true">
+ <proof prover="1"><result status="valid" time="0.16" steps="27851"/></proof>
+ </goal>
+ <goal name="list_to_tree&#39;vc" expl="VC for list_to_tree" proved="true">
+ <proof prover="1"><result status="valid" time="0.08" steps="19754"/></proof>
+ </goal>
+ <goal name="elems_inf&#39;vc" expl="VC for elems_inf" proved="true">
+ <proof prover="0"><result status="valid" time="0.05" steps="435"/></proof>
+ <proof prover="1"><result status="timeout" time="1.00" steps="152567"/></proof>
+ </goal>
+ <goal name="elems_sup&#39;vc" expl="VC for elems_sup" proved="true">
+ <proof prover="0"><result status="valid" time="0.05" steps="432"/></proof>
+ <proof prover="1"><result status="timeout" time="1.00" steps="179606"/></proof>
+ </goal>
+ <goal name="buildTree&#39;vc" expl="VC for buildTree" proved="true">
+ <proof prover="0"><result status="timeout" time="1.00"/></proof>
+ <proof prover="1"><result status="timeout" time="1.00" steps="198506"/></proof>
+ <proof prover="2"><result status="timeout" time="1.00" steps="1989754"/></proof>
+ <transf name="split_vc" proved="true" >
+  <goal name="buildTree&#39;vc.0" expl="variant decrease" proved="true">
+  <proof prover="1"><result status="valid" time="0.04" steps="10051"/></proof>
+  </goal>
+  <goal name="buildTree&#39;vc.1" expl="variant decrease" proved="true">
+  <proof prover="1"><result status="valid" time="0.04" steps="10625"/></proof>
+  </goal>
+  <goal name="buildTree&#39;vc.2" expl="postcondition" proved="true">
+  <proof prover="0"><result status="timeout" time="1.00"/></proof>
+  <proof prover="1"><result status="unknown" time="0.07" steps="15904"/></proof>
+  <proof prover="2"><result status="timeout" time="1.00" steps="3619064"/></proof>
+  <transf name="split_vc" proved="true" >
+   <goal name="buildTree&#39;vc.2.0" expl="postcondition" proved="true">
+   <proof prover="1"><result status="valid" time="0.02" steps="7957"/></proof>
+   </goal>
+   <goal name="buildTree&#39;vc.2.1" expl="postcondition" proved="true">
+   <proof prover="1"><result status="valid" time="0.08" steps="18355"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="buildTree&#39;vc.3" expl="postcondition" proved="true">
+  <proof prover="0"><result status="timeout" time="1.00"/></proof>
+  <proof prover="1"><result status="timeout" time="1.00" steps="193244"/></proof>
+  <proof prover="2"><result status="timeout" time="1.00" steps="1429744"/></proof>
+  <transf name="split_vc" proved="true" >
+   <goal name="buildTree&#39;vc.3.0" expl="postcondition" proved="true">
+   <proof prover="0"><result status="timeout" time="1.00"/></proof>
+   <proof prover="1"><result status="timeout" time="1.00" steps="238094"/></proof>
+   <proof prover="2"><result status="timeout" time="1.00" steps="1303121"/></proof>
+   <transf name="split_vc" proved="true" >
+    <goal name="buildTree&#39;vc.3.0.0" expl="postcondition" proved="true">
+    <proof prover="1"><result status="valid" time="0.03" steps="8995"/></proof>
+    </goal>
+    <goal name="buildTree&#39;vc.3.0.1" expl="postcondition" proved="true">
+    <proof prover="1"><result status="valid" time="0.06" steps="14269"/></proof>
+    </goal>
+   </transf>
+   </goal>
+   <goal name="buildTree&#39;vc.3.1" expl="postcondition" proved="true">
+   <proof prover="0"><result status="timeout" time="1.00"/></proof>
+   <proof prover="1"><result status="timeout" time="1.00" steps="194924"/></proof>
+   <proof prover="2"><result status="timeout" time="1.00" steps="1605941"/></proof>
+   <transf name="split_vc" proved="true" >
+    <goal name="buildTree&#39;vc.3.1.0" expl="postcondition" proved="true">
+    <proof prover="1"><result status="valid" time="0.03" steps="8540"/></proof>
+    </goal>
+    <goal name="buildTree&#39;vc.3.1.1" expl="postcondition" proved="true">
+    <proof prover="1"><result status="valid" time="0.05" steps="13096"/></proof>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="buildTree&#39;vc.4" expl="postcondition" proved="true">
+  <proof prover="0"><result status="timeout" time="1.00"/></proof>
+  <proof prover="1"><result status="timeout" time="1.00" steps="249474"/></proof>
+  <proof prover="2"><result status="timeout" time="1.00" steps="2926785"/></proof>
+  <transf name="split_vc" proved="true" >
+   <goal name="buildTree&#39;vc.4.0" expl="postcondition" proved="true">
+   <proof prover="1"><result status="valid" time="0.03" steps="8839"/></proof>
+   </goal>
+   <goal name="buildTree&#39;vc.4.1" expl="postcondition" proved="true">
+   <proof prover="1"><result status="valid" time="0.10" steps="22121"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+</file>
+</why3session>

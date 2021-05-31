@@ -1,0 +1,133 @@
+module Bintree_insert
+
+  use  int.Int
+  use  list.List
+  use  list.Mem
+  use  list.Append
+  use  list.Permut
+  use  list.Length
+  use  list.SortedInt
+  use  list.NumOcc
+
+
+  type tree 'a = Empty | Node (tree 'a) 'a (tree 'a)
+
+  let rec function size (t: tree 'a) : int =
+    match t with
+    |  Empty -> 0
+    |  Node l _ r -> 1 + (size l) + (size r)
+    end
+  
+  
+  predicate memt (t : tree int) (k : int) = 
+    match t with
+    | Empty -> false
+    | Node l v r -> (v = k) \/ memt l k \/ memt  r k
+    end
+  
+  (* "Auto-Level 2 prova tudo" *)
+  (* X maior que todos os elementos da arvore *)                              
+    let rec predicate leq_tree (x : int) (t: tree int) =
+    ensures { result <-> forall k:int. memt t k -> k <= x} (* Necessário para provar o add, garante que todos os int's da arvore são menores q x. *)
+      match t with 
+      | Empty -> true
+      | Node l e r -> leq_tree x l && e <= x && leq_tree x r 
+      end
+
+  (* X menor que todos os elementos da arvore *)
+    predicate geq_tree (x : int) (t : tree int) =
+      forall k : int. memt t k -> x <= k (* não precisa de ensures como o leq_tree 
+                                            que este forall garante que todos os int's da arvore são maiores. *)
+    
+  predicate sortedBT (t : tree int) =
+    match t with
+    | Empty -> true
+    | Node l e r -> sortedBT l /\ sortedBT r /\ leq_tree e l /\ geq_tree e r 
+    end
+  
+  (* num_ocurencias x na tree *)
+  function num_occ (x: 'a) (t: tree 'a) : int = 
+    match t with
+    | Empty -> 0
+    | Node l e r -> (if e = x then 1 else 0) + num_occ x l + num_occ x r
+    end 
+  
+  (* "Auto-Level 0 deve provar" *)
+  (* Função que adiciona um numero "v" de forma ordenada na arvore. *)
+  let rec add (t : tree int) (v : int) : tree int =
+    requires { sortedBT t }
+    variant { t } (* Como se está a adicionar elementos na arvore, ela vai ser o variante *)
+    ensures { sortedBT result }
+            (* o conjunto de elementos da arvore depois do add é igual ao conjunto de elementos do elemento a adicionar + a arvore original. *)
+    ensures { forall x:int. memt result x <-> ( (x = v) \/ (memt t x) ) } 
+            (* o numero de ocorrencias para cada elemento é igual entre a arvore original e a arvore resultado. À exceção das ocurrencias do elemento a inserir *)
+    ensures { forall x:int. num_occ x result = if x = v then 1 + num_occ x t else num_occ x t }                                                                           
+    ensures { size result = size t + 1 }
+    match t with
+    | Empty -> Node (Empty) v (Empty)
+    (* Os elementos mais pequenos comparado a um nodo encontram-se à sua esquerda, os maiores à sua direita. *)
+    | Node t1 x t2 -> if v <= x then Node (add t1 v) x t2 else Node t1 x (add t2 v)
+    end
+  
+  (* "Auto-Level 0 provou" *)
+  (* Função que transforma uma lista numa arvore, garantindo a presença de todos os elementos. *)
+  let rec list_to_tree (lst:list int) : tree int
+    variant { lst } (*A lista diminuí ao longo da execução, logo ser o variante*)
+    ensures { sortedBT result }
+    ensures { forall x:int. memt result x <-> mem x lst } (* Todos os elementos da lista têm de estar na arvore resultado, e vice-versa *)
+    ensures { forall x:int. num_occ x result = NumOcc.num_occ x lst } (*O numero de ocurrencias entre para cada numero tem de ser o mesmo! *)
+  = match lst with
+    | Nil -> Empty
+    | Cons head tail -> add (list_to_tree tail) head (* Uso da função add que já faz uma inserção de elementos ordenada. *)
+    end 
+  
+  (* "Auto-Level 0 provou com Alt-Ergo" *)
+  (* Função que devolve uma lista com todos os elementos de "l" que são inferiores a "x" *)
+  let rec elems_inf (x : int) (l:list int) : list int
+  variant { l }
+          (* Como a lista resultante só vai possuir os elementos menores que a cabeça, só podemos garantir igual ocorrencia dos elementos menores. *)
+  ensures { forall xx:int. xx <= x -> NumOcc.num_occ xx result = NumOcc.num_occ xx l }
+          (* todos os elementos da lista resultante têm de pertencer à lista original, mas NÂO vice-versa. *)
+  ensures { forall xx:int. mem xx result -> mem xx l }
+          (* garantir q todos os elementos desde a lista resultante são menores que o x. *)
+  ensures { forall k:int. mem k result -> k <= x}
+          (* já é de certa forma garantido com as pós-condições anteriores, mas não faz mal garantir mesmo assim! *)
+  ensures { Length.length result <= Length.length l }
+    = match l with
+    | Nil -> Nil
+    | Cons y ys -> if y <= x  then  Cons y  (elems_inf  x ys)  else elems_inf  x ys
+    end 
+
+  (* "Auto-Level 0 provou com Alt-Ergo" *)
+  (* Função que devolve uma lista com todos os elementos de "l" que são superiores a "x" *)
+  let rec elems_sup (x : int) (l:list int) : list int
+  variant { l }
+          (* Como a lista resultante só vai possuir os elementos maiores que a cabeça, só podemos garantir igual ocorrencia dos elementos maiores. *)
+  ensures { forall xx:int. xx > x -> NumOcc.num_occ xx result = NumOcc.num_occ xx l }
+          (* todos os elementos da lista resultante têm de pertencer à lista original, mas NÂO vice-versa. *)
+  ensures { forall xx:int. mem xx result -> mem xx l }
+          (* garantir q todos os elementos desde a lista resultante são maiores que o x. *)
+  ensures { forall k:int. mem k result -> k > x}
+          (* já é de certa forma garantido com as pós-condições anteriores, mas não faz mal garantir mesmo assim! *)
+  ensures { Length.length result <= Length.length l }
+    = match l with
+    | Nil -> Nil
+    | Cons y ys -> if y > x  then  Cons y  (elems_sup  x ys)  else elems_sup  x ys
+    end 
+  
+  (* "Auto-Level 2 prova tudo" *)
+  (* Função que constroi uma arvore por partições recursivamente *)
+  let rec buildTree (lst:list int) : tree int
+  ensures { sortedBT result }
+          (* ter "lst" com variante não funciona, logo usou-se o seu comprimento. *)
+  variant { Length.length lst }
+          (* garantir que todos os elementos da lista original pertencem à arvore final *)
+  ensures { forall x:int. mem x lst <-> memt result x }
+          (*garantir que todas as ocorrencias de um int na arvore resultante é igual às ocorrencias na lista original.*)
+  ensures { forall x:int. num_occ x result = NumOcc.num_occ x lst }
+  = match lst with
+    | Nil -> Empty
+    | Cons head tail -> Node (buildTree (elems_inf head tail)) head (buildTree (elems_sup head tail))
+    end
+  
+end
